@@ -47,10 +47,24 @@ fluidPage(
                           conditionalPanel(condition = 'input.simular==1',
                                            h3('Calculo de integrales'),
                                            fluidRow(
-                                             column(4,textInput('func','Ingrese la función que desea evaluar')),
-                                             column(4,numericInput('linf','Límite inferior',min=0,max = 10,value = 0)),
-                                             column(4, numericInput('lsup','Límite superior',min=0,max = 10,value = 1))
-                                           ),
+                                                  column(4, textInput("func", "Ingrese la función que desea evaluar")),
+                                                  column(4,
+                                                         selectInput("lim_inf_tipo", "Tipo de límite inferior:",
+                                                                     choices = c("Finito" = "fin", "-∞" = "inf_menor"),
+                                                                     selected = "fin")),
+                                                  column(4,
+                                                         selectInput("lim_sup_tipo", "Tipo de límite superior:",
+                                                                     choices = c("Finito" = "fin", "+∞" = "inf_mayor"),
+                                                                     selected = "fin"))
+                                                ),
+                                                
+                                                # Mostrar los campos solo si son finitos
+                                                conditionalPanel(condition = "input.lim_inf_tipo == 'fin'",
+                                                                 numericInput("linf", "Límite inferior", value = 0)),
+                                                conditionalPanel(condition = "input.lim_sup_tipo == 'fin'",
+                                                                 numericInput("lsup", "Límite superior", value = 1)),
+                                                
+                                           hr(),
                                            plotOutput('graficofun'),
                                            h3('El resultado de la integral es:'),
                                            verbatimTextOutput('integral')
@@ -60,4 +74,5 @@ fluidPage(
                  tabPanel("Variables aleatorias Continuas"))
     )
   )
+
 )
