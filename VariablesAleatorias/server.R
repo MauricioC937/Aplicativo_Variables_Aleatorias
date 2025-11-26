@@ -61,6 +61,63 @@ ml_sim <- function(x0,n,c,nsim){
   return(vec)
 }
 
+# VARIABLES ALEATORIAS DISCRETAS
+
+# Método de la transformada inversa
+t_inversa <- function(probs, vals, nval){
+  sprobs <- cumsum(probs)
+  res <- numeric(nval)
+  for(j in 1:nval){
+    res[j] <- vals[runif(1) < sprobs][1]
+  }
+  return(res)
+}
+
+# Geométrica
+x_geometrica <- function(p, nval){
+  res <- numeric(nval)
+  for(j in 1:nval){
+    res[j] <- floor(log(runif(1))/log(1-p)) + 1
+  }
+  return(res)
+}
+
+# Poisson
+x_poisson <- function(lambda, nval){
+  res <- numeric(nval)
+  for(j in 1:nval){
+    i <- X <- 0
+    Fx <- p <- exp(-lambda)
+    U <- runif(1)
+    while(U > Fx){
+      X <- i
+      p <- (lambda*p)/(i+1)
+      Fx <- Fx + p
+      i <- i+1
+    }
+    res[j] <- i
+  }
+  return(res)
+}
+
+# Binomial
+x_binomial <- function(n, p, nval){
+  res <- numeric(nval)
+  for(j in 1:nval){
+    c <- p/(1-p)
+    i <- 0
+    Fx <- pr <- (1-p)^n
+    U <- runif(1)
+    while(U > Fx){
+      pr <- c*((n-i)/(i+1))*pr
+      Fx <- Fx + pr
+      i <- i+1
+    }
+    res[j] <- i
+  }
+  return(res)
+}
+
 # Define server logic required to draw a histogram
 function(input, output, session) {
   
@@ -140,6 +197,37 @@ function(input, output, session) {
         mean(fx_vals / px)
       }
     })
+
+  aleatorios_discretos <- eventReactive(input$sim_disc, {
+      n <- input$num_disc
+      if (input$MetodoDisc == "Transformada Inversa") {
+        t_inversa(
+          probs = as.numeric(unlist(strsplit(input$probs, ","))),
+          vals  = as.numeric(unlist(strsplit(input$vals, ","))),
+          nval = n
+        )
+      } else if (input$MetodoDisc == "Geométrica") {
+        x_geometrica(p = input$p_geom, nval = n)
+      } else if (input$MetodoDisc == "Poisson") {
+        x_poisson(lambda = input$lambda_pois, nval = n)
+      } else { 
+        x_binomial(n = input$n_bin, p = input$p_bin, nval = n)
+      }
+    })
+    
+    output$disc_code <- renderPrint({
+      aleatorios_discretos()
+    })
+    output$disc_grafico <- renderPlot({
+      hist(aleatorios_discretos(), 
+           col = "orange", border = "black", 
+           main = "Distribución Simulada",
+           xlab = "Valores generados")
+    })
+    output$disc_resumen <- renderPrint({
+      summary(aleatorios_discretos())
+    })
   
 }
+
 
