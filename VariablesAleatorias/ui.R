@@ -70,9 +70,64 @@ fluidPage(
                                            verbatimTextOutput('integral')
                           )
                  ),
-                 tabPanel("Variables aleatorias Discretas"),
+                 tabPanel("Var Aleatorias Discretas",
+                                                 h3("Simulación de Variables Aleatorias Discretas"),
+                                                 numericInput("num_disc", 
+                                                 "Número de variables aleatorias a generar:", 
+                                                 min = 1, max = 2000, value = 20),
+                                                 hr(),
+                                                 selectInput("MetodoDisc", "Seleccione la distribución:",
+                                                 choices = c("Transformada Inversa",
+                                                        "Geométrica",
+                                                        "Poisson",
+                                                        "Binomial")),
+                                                 hr(),
+                                                 #Transformada inversa
+                                                 conditionalPanel(
+                                                 condition = "input.MetodoDisc == 'Transformada Inversa'",
+                                                 helpText("Ingrese probabilidades separadas por coma: 0.2,0.5,0.3"),
+                                                 textInput("probs", "Probabilidades:", "0.2,0.5,0.3"),            
+                                                 helpText("Ingrese los valores asociados: 1,2,3"),
+                                                 textInput("vals", "Valores:", "1,2,3")
+                                                  ),
+                                                 
+                                                 #Geometrica
+                                                 conditionalPanel(
+                                                 condition = "input.MetodoDisc == 'Geométrica'",
+                                                 numericInput("p_geom", 
+                                                              "Probabilidad de éxito (p):", 
+                                                              value = 0.3, min = 0.0001, max = 1)
+                                                 ),
+                                                
+                                                #Poisson
+                                                 conditionalPanel(condition = "input.MetodoDisc == 'Poisson'",
+                                                 numericInput("lambda_pois", 
+                                                              "Tasa λ:", 
+                                                              value = 3, min = 0.0001)
+                                                ),
+                               
+                                                #Binomial
+                                                conditionalPanel(condition = "input.MetodoDisc == 'Binomial'",
+                                                 numericInput("n_bin", "Número de ensayos (n):", 
+                                                              min = 1, value = 10),
+                                                 numericInput("p_bin", "Probabilidad de éxito (p):", 
+                                                              min = 0, max = 1, value = 0.5)
+                                               ),
+                                
+                                               hr(),
+                                
+                                               actionButton("sim_disc", "Simular", icon = icon("dice")),
+                                
+                                               hr(),
+                                               h4("Resultados de la Simulación"),
+                                
+                                verbatimTextOutput("disc_code"),
+                                plotOutput("disc_grafico"),
+                                verbatimTextOutput("disc_resumen")
+                         ),
                  tabPanel("Variables aleatorias Continuas"))
     )
   )
 
 )
+
