@@ -1,1 +1,1 @@
-# Aplicativo Trabajo Grupal
+# Aplicativo para Variables Aleatorias
