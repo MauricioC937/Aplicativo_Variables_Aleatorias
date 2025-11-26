@@ -105,5 +105,41 @@ function(input, output, session) {
     hy <- (input$lsup -input$linf)*fx()(input$linf+(input$lsup -input$linf)*aleatorios())
     mean(hy)
   })
+
+  output$integral <- renderPrint({
+      f <- fx()
+      u <- aleatorios()
+    
+      a <- if (input$lim_inf_tipo == "fin") input$linf else NA
+      b <- if (input$lim_sup_tipo == "fin") input$lsup else NA
+      
+      if (input$lim_inf_tipo == "fin" && input$lim_sup_tipo == "fin") {
+        # Integral en [a, b]
+        x <- a + (b - a) * u
+        (b - a) * mean(f(x))
+        
+      } else if (input$lim_inf_tipo == "inf_menor" && input$lim_sup_tipo == "inf_mayor") {
+        # Integral en (-∞, ∞)
+        x <- tan(pi * (u - 0.5))
+        fx_vals <- f(x)
+        px <- 1 / (pi * (1 + x^2))
+        mean(fx_vals / px)
+        
+      } else if (input$lim_inf_tipo == "inf_menor" && input$lim_sup_tipo == "fin") {
+        # Integral en (-∞, b)
+        x <- b - tan(pi * u / 2)
+        fx_vals <- f(x)
+        px <- 1 / (pi/2 * (1 + (tan(pi * u / 2))^2))
+        mean(fx_vals / px)
+        
+      } else if (input$lim_inf_tipo == "fin" && input$lim_sup_tipo == "inf_mayor") {
+        # Integral en [a, ∞)
+        x <- a + tan(pi * u / 2)
+        fx_vals <- f(x)
+        px <- 1 / (pi/2 * (1 + (tan(pi * u / 2))^2))
+        mean(fx_vals / px)
+      }
+    })
   
 }
+
