@@ -118,29 +118,20 @@ x_binomial <- function(n, p, nval){
   return(res)
 }
 generar_va <- function(n, tipo, param = list()) {
-  
-  # 1. Exponencial ---------------------------
   if (tipo == "exponencial") {
     lambda <- param$lambda
     U <- runif(n)
     return( -log(U) / lambda )
   }
-  
-  # 2. F fija con transformada explícita ----
   if (tipo == "f_fija") {
-    # Aquí el usuario debe proporcionar la función inversa F^{-1}(u)
-    Finv <- param$Finv   # Finv es una función
+    Finv <- param$Finv  
     U <- runif(n)
     return( Finv(U) )
   }
   
-  # 3. Distribución por trozos --------------
   if (tipo == "f_trozos") {
-    # La forma general requiere:
-    # - puntos de corte p_i: probabilidades acumuladas
-    # - funciones inversas por tramo
-    cortes <- param$cortes      # ej: c(0, 1/3, 1)
-    inversas <- param$inversas  # lista de funciones F^{-1} por tramo
+    cortes <- param$cortes    
+    inversas <- param$inversas
     
     U <- runif(n)
     res <- numeric(n)
