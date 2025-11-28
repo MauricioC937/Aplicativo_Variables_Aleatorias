@@ -117,6 +117,45 @@ x_binomial <- function(n, p, nval){
   }
   return(res)
 }
+generar_va <- function(n, tipo, param = list()) {
+  
+  # 1. Exponencial ---------------------------
+  if (tipo == "exponencial") {
+    lambda <- param$lambda
+    U <- runif(n)
+    return( -log(U) / lambda )
+  }
+  
+  # 2. F fija con transformada explícita ----
+  if (tipo == "f_fija") {
+    # Aquí el usuario debe proporcionar la función inversa F^{-1}(u)
+    Finv <- param$Finv   # Finv es una función
+    U <- runif(n)
+    return( Finv(U) )
+  }
+  
+  # 3. Distribución por trozos --------------
+  if (tipo == "f_trozos") {
+    # La forma general requiere:
+    # - puntos de corte p_i: probabilidades acumuladas
+    # - funciones inversas por tramo
+    cortes <- param$cortes      # ej: c(0, 1/3, 1)
+    inversas <- param$inversas  # lista de funciones F^{-1} por tramo
+    
+    U <- runif(n)
+    res <- numeric(n)
+    
+    for (j in seq_len(n)) {
+      u <- U[j]
+      tramo <- max(which(cortes <= u))
+      res[j] <- inversas[[tramo]](u)
+    }
+    
+    return(res)
+  }
+  
+  stop("Tipo de distribución continua no reconocido.")
+}
 
 # Define server logic required to draw a histogram
 function(input, output, session) {
@@ -227,7 +266,44 @@ function(input, output, session) {
     output$disc_resumen <- renderPrint({
       summary(aleatorios_discretos())
     })
-  
+    datos <- reactive({
+      
+      if (input$tipo == "Exponencial") {
+        return(generar_va(input$n, "exponencial",
+                          param = list(lambda = input$lambda)))
+      }
+      
+      if (input$tipo == "F fija") {
+        
+        finv_text <- input$finv
+        
+        # Si no contiene "function", lo envolvemos automáticamente
+        if (!grepl("function", finv_text)) {
+          finv_text <- paste0("function(u) { ", finv_text, " }")
+        }
+        
+        Finv <- eval(parse(text = finv_text))
+        
+        return(generar_va(input$n, "f_fija",
+                          param = list(Finv = Finv)))
+      }
+      
+      
+      
+      if (input$tipo == "F por trozos") {
+        cortes <- eval(parse(text = paste("c(", input$cortes, ")")))
+        inv_text <- strsplit(input$inversas, ";")[[1]]
+        inversas <- lapply(inv_text, function(x) eval(parse(text = x)))
+        
+        return(generar_va(input$n, "f_trozos",
+                          param = list(cortes = cortes,
+                                       inversas = inversas)))
+      }
+    })
+    
+    output$histo <- renderPlot({
+      hist(datos(), freq = FALSE, col = "lightblue")
+    })
 }
 
 

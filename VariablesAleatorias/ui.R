@@ -125,7 +125,49 @@ fluidPage(
                                 plotOutput("disc_grafico"),
                                 verbatimTextOutput("disc_resumen")
                          ),
-                 tabPanel("Variables aleatorias Continuas"))
+                 tabPanel("Variables aleatorias Continuas",
+                          h3("Simulación de Variables Aleatorias Continuas"),
+                          
+                          selectInput("tipo", "Tipo de distribución:",
+                                      choices = c("Exponencial", "F fija", "F por trozos")),
+                          
+                          numericInput("n", "Número de valores a generar:", 10000, min = 1),
+                          
+                          # Exponencial
+                          conditionalPanel(
+                            "input.tipo == 'Exponencial'",
+                            numericInput("lambda", "λ:", 5, min = 0.00001)
+                          ),
+                          
+                          # F fija
+                          conditionalPanel(
+                            "input.tipo == 'F fija'",
+                            helpText("Ingrese F^{-1}(u). Puede escribir la función completa o solo la expresión."),
+                            textAreaInput("finv",
+                                          "Función F^{-1}(u):",
+                                          "function(u) { sqrt(2*u + 1/4) - 1/2 }",
+                                          rows = 3)
+                          ),
+                          
+                          # F por trozos
+                          conditionalPanel(
+                            "input.tipo == 'F por trozos'",
+                            helpText("Ingrese los cortes de la distribución. Ejemplo: 0, 1/3, 1"),
+                            textInput("cortes", "Cortes:", "0, 1/3, 1"),
+                            
+                            helpText("Ingrese las inversas por tramo, separadas por ';'"),
+                            textAreaInput("inversas",
+                                          "Funciones inversas:",
+                                          "function(u) { 3*u } ; function(u) { (3*u + 1)/2 }",
+                                          rows = 3)
+                          ),
+                          
+                          
+                          plotOutput("histo"),
+                          verbatimTextOutput("cont_resumen")
+                 )
+                 
+                 )
     )
   )
 
