@@ -117,6 +117,21 @@ x_binomial <- function(n, p, nval){
   }
   return(res)
 }
+# Binomial Negativa
+x_binom_negativa <- function(r,p,nval){
+  res <- numeric(nval)
+  for(j in 1:nval){
+    sum_geom <- 0
+    for(i in 1:r){
+      U <- runif(1)
+      geom <- floor(log(U)/log(1-p)) + 1
+      sum_geom <- sum_geom + geom
+    }
+    res[j] <- sum_geom
+  }
+  return(res)
+}
+
 generar_va <- function(n, tipo, param = list()) {
   if (tipo == "exponencial") {
     lambda <- param$lambda
@@ -144,18 +159,31 @@ generar_va <- function(n, tipo, param = list()) {
     
     return(res)
   }
-  
   stop("Tipo de distribución continua no reconocido.")
 }
+# ACEPTACIÓN – RECHAZO
+aceptacion_rechazo <- function(nval, fx, gx, g_inv, c){
+  res <- numeric(nval)
+  i <- 0
+  while(i < nval){
+    U <- runif(1)
+    Y<- g_inv(U)
+    U2 <- runif(1)
+    if(U2 <= fx(Y)/(c*gx(Y))){
+      res[i+1] <- Y
+      i <- i+1
+    }
+  }
+  return(res)
+}
 
-# Define server logic required to draw a histogram
+
 function(input, output, session) {
   
   fx <- reactive({
-    expresion <- input$func
-    #Construye una función a partir del texto
-    function(x){
-      eval(parse(text=expresion))
+    expr <- parse(text = input$func)
+    function(x) {
+      eval(expr, envir = list(x = x))
     }
   })
   
@@ -188,11 +216,7 @@ function(input, output, session) {
     
     plot(xvals,yvals,type='l',col='red',main='Función ingresada por el usuario')
   })
-  output$integral <- renderPrint({
-    hy <- (input$lsup -input$linf)*fx()(input$linf+(input$lsup -input$linf)*aleatorios())
-    mean(hy)
-  })
-
+  
   output$integral <- renderPrint({
       f <- fx()
       u <- aleatorios()
@@ -240,8 +264,10 @@ function(input, output, session) {
         x_geometrica(p = input$p_geom, nval = n)
       } else if (input$MetodoDisc == "Poisson") {
         x_poisson(lambda = input$lambda_pois, nval = n)
-      } else { 
-        x_binomial(n = input$n_bin, p = input$p_bin, nval = n)
+      } else if (input$MetodoDisc == "Binomial"){
+      x_binomial(n = input$n_bin, p = input$p_bin, nval = n)
+      } else{
+      x_binom_negativa(r=input$r_bin,p=input$p_bneg,nval=n)
       }
     })
     
@@ -257,7 +283,8 @@ function(input, output, session) {
     output$disc_resumen <- renderPrint({
       summary(aleatorios_discretos())
     })
-    datos <- reactive({
+  # VA Continuas
+    datos <- eventReactive(input$sim_cont,{
       
       if (input$tipo == "Exponencial") {
         return(generar_va(input$n, "exponencial",
@@ -278,9 +305,6 @@ function(input, output, session) {
         return(generar_va(input$n, "f_fija",
                           param = list(Finv = Finv)))
       }
-      
-      
-      
       if (input$tipo == "F por trozos") {
         cortes <- eval(parse(text = paste("c(", input$cortes, ")")))
         inv_text <- strsplit(input$inversas, ";")[[1]]
@@ -290,11 +314,30 @@ function(input, output, session) {
                           param = list(cortes = cortes,
                                        inversas = inversas)))
       }
-    })
-    
-    output$histo <- renderPlot({
-      hist(datos(), freq = FALSE, col = "lightblue")
-    })
+      if(input$tipo == "Método de Aceptación-Rechazo"){
+      
+      fx <- eval(parse(text=input$densf))
+      gx <- eval(parse(text=input$envolvente))
+      g_inv <- eval(parse(text=input$ginv))
+      
+      # calcular c = max f(x)/g(x)
+      hx <- function(x) fx(x)/gx(x)
+      opt <- optimise(hx, interval=c(0,1), maximum=TRUE)
+      c <- opt$objective
+      return( aceptacion_rechazo(input$n, fx, gx, g_inv, c) )
+    }                     
+  })
+  output$cont_code <- renderPrint({
+    datos()
+  })
+  output$histo <- renderPlot({
+    hist(datos(), col = "#F54927",border = "black", 
+         main = "Distribución Simulada",
+         xlab = "Valores generados")
+  })
+  output$cont_resumen <- renderPrint({
+    summary(datos())
+  })
 }
 
 
