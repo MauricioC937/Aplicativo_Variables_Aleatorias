@@ -6,8 +6,13 @@ fluidPage(
   # Application title
   titlePanel(
     fluidRow(
-      column(width=2),
-      column(width=10,h1('Aplicativo Web'))
+      column(width=2,tags$img(src="epn.png", width="80px", height="80px")),
+      column(width=10,h1('Números Aleatorios-Variables Aleatorias',
+                         style="text-align:center;color:#132b60;
+                         padding:18px;font-size:1.1em;font-family:roman"),
+             h1('Dayanareth Estevez, Dennis Bazurto, Mauricio Caisaguano', 
+                style="text-align:center;color:#132b60;
+                         padding:18px;font-size:0.5em;font-family:roman"))
     )
   ),
   
@@ -44,7 +49,7 @@ fluidPage(
                           plotOutput('grafico'),
                           verbatimTextOutput('resumen'),
                           hr(),
-                          conditionalPanel(condition = 'input.simular==1',
+                          conditionalPanel(condition = "input.simular > 0",
                                            h3('Calculo de integrales'),
                                            fluidRow(
                                                   column(4, textInput("func", "Ingrese la función que desea evaluar")),
@@ -70,7 +75,7 @@ fluidPage(
                                            verbatimTextOutput('integral')
                           )
                  ),
-                 tabPanel("Var Aleatorias Discretas",
+                 tabPanel("Variables Aleatorias Discretas",
                                                  h3("Simulación de Variables Aleatorias Discretas"),
                                                  numericInput("num_disc", 
                                                  "Número de variables aleatorias a generar:", 
@@ -80,7 +85,8 @@ fluidPage(
                                                  choices = c("Transformada Inversa",
                                                         "Geométrica",
                                                         "Poisson",
-                                                        "Binomial")),
+                                                        "Binomial",
+                                                        "Binomial Negativa")),
                                                  hr(),
                                                  #Transformada inversa
                                                  conditionalPanel(
@@ -113,11 +119,19 @@ fluidPage(
                                                  numericInput("p_bin", "Probabilidad de éxito (p):", 
                                                               min = 0, max = 1, value = 0.5)
                                                ),
+
+                                              #Binomial Negativa
+                                              conditionalPanel(condition = "input.MetodoDisc == 'Binomial Negativa'",
+                                               numericInput("r_bin", "Número de éxitos deseados (r):", 
+                                                        min = 1, value = 10),
+                                               numericInput("p_bneg", "Probabilidad de éxito (p):", 
+                                                        min = 0, max = 1, value = 0.5)
+                                              ),
                                 
-                                               hr(),
+                                              hr(),
                                 
                                                actionButton("sim_disc", "Simular", icon = icon("dice")),
-                                
+                        
                                                hr(),
                                                h4("Resultados de la Simulación"),
                                 
@@ -125,13 +139,16 @@ fluidPage(
                                 plotOutput("disc_grafico"),
                                 verbatimTextOutput("disc_resumen")
                          ),
-                 tabPanel("Variables aleatorias Continuas",
+                tabPanel("Variables Aleatorias Continuas",
                           h3("Simulación de Variables Aleatorias Continuas"),
                           
                           selectInput("tipo", "Tipo de distribución:",
-                                      choices = c("Exponencial", "F fija", "F por trozos")),
+                                      choices = c("Exponencial", 
+                                                  "F fija", 
+                                                  "F por trozos",
+                                                  "Método de Aceptación-Rechazo")),
                           
-                          numericInput("n", "Número de valores a generar:", 10000, min = 1),
+                          numericInput("n", "Número de valores a generar:", min = 1,max=10000,value=10),
                           
                           # Exponencial
                           conditionalPanel(
@@ -161,13 +178,32 @@ fluidPage(
                                           "function(u) { 3*u } ; function(u) { (3*u + 1)/2 }",
                                           rows = 3)
                           ),
+                          # Método de aceptación y rechazo
+                          conditionalPanel(
+                            "input.tipo == 'Método de Aceptación-Rechazo'",
+                            helpText("Ingrese la función de densidad, la función envolvente y su inversa G^{-1}(u)."),
+                            helpText('Ingrese la función de densidad:'),
+                            textAreaInput("densf", "f(x):",
+                                          "function(x){ 20*x*(1-x)^3 }", rows = 3),
+                            helpText('Ingrese la función envolvente:'),
+                            textAreaInput("envolvente", "g(x):",
+                                          "function(x){ 0.5 + x }", rows = 3),
+                            helpText('Ingrese la inversa de la envolvente'),
+                            textAreaInput("ginv", "G^{-1}(u):",
+                                          "function(u){sqrt(0.25 + 2*u)-0.5 }",
+                                          rows = 3)
+                          ),
                           
-                          
+                          hr(),
+                          actionButton("sim_cont", "Simular", icon = icon("dice")),
+                          hr(),
+                          h4("Resultados de la Simulación"),
+                          verbatimTextOutput("cont_code"),
                           plotOutput("histo"),
                           verbatimTextOutput("cont_resumen")
                  )
                  
-                 )
+      )
     )
   )
 
